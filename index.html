@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>GMS3 手順書</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="lib/leaflet.css?v=r22">
+<style>
+/* Layout: 調査車両の塗装(緑のロゴ+黄色の帯)を手がかりにした、写真中心の手順書。
+   上段に手順書の章タブ、その下に場所別の小タブ、本文は写真カードの一覧。 */
+:root {
+  --bg: #f2f4f2;
+  --surface: #ffffff;
+  --surface-2: #e8ece9;
+  --fg: #1a231e;
+  --muted: #58645d;
+  --line: #d5dcd7;
+  --green: #2c7d2e;
+  --green-soft: #dcefdc;
+  --amber: #d99a00;
+  --warn-bg: #fff0c2;
+  --warn-fg: #6b4a00;
+  --on-green: #ffffff;
+  --title-bg: #dbe8f8;
+  --title-fg: #11315c;
+  --title-line: #b7cfee;
+  --link: #14589e;
+  --shadow: 0 1px 2px rgba(20, 40, 28, .08);
+  --font-body: "BIZ UDPGothic", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101512;
+    --surface: #19201c;
+    --surface-2: #232c26;
+    --fg: #e6ede8;
+    --muted: #9eaca3;
+    --line: #2e3933;
+    --green: #6cc76a;
+    --green-soft: #1f3a22;
+    --amber: #f0b429;
+    --warn-bg: #3d3010;
+    --warn-fg: #f3cf7a;
+    --on-green: #0e1a10;
+    --title-bg: #1c2e48;
+    --title-fg: #c6dcf8;
+    --title-line: #2c4668;
+    --link: #8dbcf5;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101512;
+  --surface: #19201c;
+  --surface-2: #232c26;
+  --fg: #e6ede8;
+  --muted: #9eaca3;
+  --line: #2e3933;
+  --green: #6cc76a;
+  --green-soft: #1f3a22;
+  --amber: #f0b429;
+  --warn-bg: #3d3010;
+  --warn-fg: #f3cf7a;
+  --on-green: #0e1a10;
+    --title-bg: #1c2e48;
+    --title-fg: #c6dcf8;
+    --title-line: #2c4668;
+  --link: #8dbcf5;
+  --shadow: none;
+  color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: 1.65; }
+* { box-sizing: border-box; }
+.wrap { max-width: 1120px; margin-inline: auto; padding-inline: 16px; }
+
+/* ヘッダー */
+.top { background: var(--surface); border-bottom: 1px solid var(--line); }
+.livery { height: 8px; background: linear-gradient(to bottom, var(--green) 0 50%, var(--amber) 50% 100%); }
+.top .wrap { padding-block: 14px 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; color: var(--muted); margin: 0; }
+h1 { font-size: clamp(24px, 4vw, 32px); line-height: 1.3; margin: 2px 0 12px; text-wrap: balance; }
+
+/* 章タブ */
+.chapters { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.chapters::-webkit-scrollbar { display: none; }
+.chapter {
+  flex: none; font: inherit; font-size: 15px; padding: 9px 16px; border: 0; background: transparent; color: var(--muted);
+  border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap;
+}
+.chapter[aria-selected="true"] { color: var(--fg); font-weight: 700; border-bottom-color: var(--green); }
+.chapter:disabled { cursor: default; opacity: .55; }
+.chapter small { font-size: 11px; margin-left: 6px; color: var(--muted); }
+
+/* 場所の小タブ */
+.places-bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.places { display: flex; gap: 8px; overflow-x: auto; padding-block: 10px; scrollbar-width: none; }
+.places::-webkit-scrollbar { display: none; }
+.place {
+  flex: none; font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg); white-space: nowrap;
+}
+.place[aria-selected="true"] { background: var(--green); border-color: var(--green); color: var(--on-green); font-weight: 700; }
+.place:hover:not([aria-selected="true"]) { background: var(--surface-2); }
+.chapter:focus-visible, .place:focus-visible, .shot:focus-visible, .close:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+
+/* 本文 */
+main { padding-block: 20px 56px; }
+.notice { font-size: 13px; color: var(--muted); margin: 0 0 18px; max-width: 70ch; }
+.panel-head h2 { font-size: 22px; line-height: 1.4; margin: 0 0 4px; }
+.panel-head p { margin: 0 0 18px; color: var(--muted); max-width: 70ch; }
+
+.movie { margin: 0 0 22px; display: grid; gap: 8px; justify-items: start; }
+.movie video { width: 100%; max-height: 72vh; background: #000; border-radius: 8px; display: block; }
+.movie.portrait video { max-width: 340px; }
+.movie figcaption { font-size: 13px; color: var(--muted); }
+
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; box-shadow: var(--shadow); }
+.shot { position: relative; overflow: hidden; display: block; width: 100%; padding: 0; border: 0; background: var(--surface-2); cursor: zoom-in; aspect-ratio: 4 / 3; }
+.shot::before { content: ""; position: absolute; inset: -24px; background-image: var(--img); background-size: cover; background-position: center; filter: blur(20px) brightness(.85); }
+.shot img { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: contain; display: block; }
+.card h3 { white-space: pre-line; margin: 0; padding: 9px 14px; min-height: 4.2em; box-sizing: border-box; display: flex; align-items: center; font-size: 16px; line-height: 1.45; background: var(--title-bg); color: var(--title-fg); border-block: 1px solid var(--title-line); }
+.card-body { padding: 12px 14px 14px; display: grid; gap: 8px; min-width: 0; }
+.card .note { margin: 0; white-space: pre-line; font-size: 13px; color: var(--muted); }
+.parts { margin: 0; display: grid; gap: 8px; }
+.part { display: grid; gap: 1px; padding-top: 8px; border-top: 1px solid var(--line); min-width: 0; }
+.part dt { font-weight: 700; font-size: 15px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+.part dd { margin: 0; font-size: 13.5px; color: var(--muted); overflow-wrap: anywhere; white-space: pre-line; }
+.part dd a { color: var(--link); text-decoration: underline; text-underline-offset: 2px; }
+.part dd a:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+.chip { font-size: 11px; font-weight: 400; padding: 0 7px; border-radius: 999px; background: var(--warn-bg); color: var(--warn-fg); line-height: 1.7; }
+.alias { font-family: var(--font-mono); font-size: 12px; font-weight: 500; color: var(--green); }
+
+/* 拡大表示 */
+dialog { border: 0; padding: 0; background: transparent; max-width: 100vw; max-height: 100vh; width: 100%; height: 100%; }
+dialog::backdrop { background: rgba(8, 12, 10, .86); }
+.lb { height: 100%; display: grid; grid-template-rows: 1fr auto; gap: 10px; padding: 16px; justify-items: center; align-items: center; }
+.lb img { max-width: 100%; max-height: 100%; min-height: 0; object-fit: contain; border-radius: 6px; }
+.lb-bar { display: flex; gap: 12px; align-items: center; color: #eef3ef; font-size: 14px; max-width: 100%; }
+.close { font: inherit; font-size: 14px; padding: 6px 16px; border-radius: 999px; border: 1px solid #94a39a; background: #1d2621; color: #eef3ef; cursor: pointer; flex: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .card { transition: border-color .15s; }
+  .card:hover { border-color: var(--green); }
+}
+
+/* 釧路ルート */
+#kushiro { padding-block: 16px 40px; }
+#prog { padding-block: 20px 40px; }
+.pg-top { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.pg-big { font-size: 40px; font-weight: 800; line-height: 1.1; margin-bottom: 8px; }
+.pg-sub { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.pg-bar { height: 14px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.pg-fill { height: 100%; background: var(--green); }
+.pg-sec { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-top: 10px; }
+.pg-hd { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 15px; }
+.pg-n { color: var(--muted); font-size: 13px; }
+.pg-kp { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.pg-tbl { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 4px; }
+.pg-tbl summary { cursor: pointer; font-weight: 700; }
+.pg-tw { overflow-x: auto; margin-top: 8px; }
+.pg-tw table { border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+.pg-tw th, .pg-tw td { border: 1px solid var(--line); padding: 4px 8px; text-align: right; }
+.pg-tw th { background: var(--surface-2); }
+.pg-tw td:nth-child(2), .pg-tw td:nth-child(3), .pg-tw td:nth-child(8) { text-align: left; }
+.pg-sum td { font-weight: 700; }
+.pg-blocks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.pg-blk { font: inherit; font-size: 13px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; touch-action: manipulation; }
+.pg-blk[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: var(--on-green); font-weight: 700; }
+#prep, #meas, #note { padding-block: 20px 40px; }
+.p-h { font-size: 20px; margin: 0 0 14px; }
+.p-list { list-style: none; counter-reset: p; margin: 0; padding: 0; display: grid; gap: 10px; }
+.p-list li { counter-increment: p; display: flex; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; font-size: 16px; line-height: 1.5; }
+.p-list li::before { content: counter(p); flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--green); color: var(--on-green); font-weight: 700; display: grid; place-items: center; }
+#prog[hidden], #prep[hidden], #note[hidden], #meas[hidden], #kushiro[hidden], .places-bar[hidden], #manual[hidden] { display: none; }
+.k-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.k-btn { font: inherit; font-size: 14px; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+.k-btn[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: var(--on-green); font-weight: 700; }
+.k-status { font-size: 13px; color: var(--muted); }
+.k-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
+.k-map { height: min(76vh, 760px); min-height: 380px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; contain: paint; isolation: isolate; background: var(--surface-2); z-index: 0; }
+.k-side { position: relative; z-index: 2; touch-action: manipulation; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; max-height: min(76vh, 760px); overflow-y: auto; }
+.k-h { font-size: 14px; margin: 0 0 8px; color: var(--muted); }
+.k-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.k-chip { font: inherit; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+.k-chip[aria-pressed="false"] { opacity: .45; text-decoration: line-through; }
+.k-chip:has(.k-dot)[aria-pressed="false"] { text-decoration: none; opacity: .8; }
+.k-sw { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
+.k-sw-dash { background: repeating-linear-gradient(90deg, #d32f2f 0 3px, transparent 3px 6px); }
+.k-sw-pin { width: 10px; height: 10px; border-radius: 50%; background: #2c7d2e; box-shadow: 8px 0 0 #c62828; margin-right: 8px; }
+.k-pin { font: 700 11px/18px var(--font-mono); color: #fff; text-align: center; border: 2px solid #fff; border-radius: 10px; width: 34px; height: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
+.k-pin-s { background: #2c7d2e; }
+.k-pin-e { background: #c62828; }
+.k-sec[aria-pressed="true"] { box-shadow: inset 7px 0 0 var(--c); }
+.k-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--c); margin-right: 6px; vertical-align: -1px; }
+.k-now { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 14px; }
+.k-now-l { font-weight: 700; }
+.k-none { color: var(--muted); }
+.k-tag { font: inherit; font-size: 14px; color: var(--fg); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; }
+.k-tag:hover { background: var(--surface-2); }
+.k-tag:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+.k-tag-dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.k-hd { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.k-hd .k-h { margin: 0 auto 0 0; min-width: 0; }
+.k-mini { white-space: nowrap; flex: none; font: inherit; font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+.k-ghost { font-size: 13px; font-weight: 400; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.k-now-t { flex: 1; min-width: 0; }
+.k-now { flex-wrap: wrap; }
+.k-chip[aria-pressed="false"].k-off, .k-chips + .k-note { }
+.k-poi { width: 22px; height: 22px; border-radius: 50%; color: #fff; font: 700 12px/18px var(--font-body); text-align: center; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
+.k-dot { width: 18px; height: 18px; border-radius: 50%; color: #fff; font: 700 11px/18px var(--font-body); text-align: center; display: inline-block; }
+.k-note { font-size: 12px; color: var(--muted); margin: -8px 0 16px; min-height: 1.4em; }
+.leaflet-control-scale { margin-left: 10px !important; margin-bottom: 14px !important; }
+.leaflet-control-scale-line { font-size: 13px; font-weight: 700; color: #1a1a1a; background: rgba(255,255,255,.92); border: 2px solid #1a1a1a; border-top: none; padding: 1px 8px 2px; line-height: 1.3; }
+.k-chip[aria-pressed="false"] .k-dot { opacity: .6; }
+.k-mapnote { margin: 0 0 8px; }
+.k-mapnote:empty { display: none; }
+.k-kp { width: max-content; transform: translate(-50%, -50%); white-space: nowrap; font: 700 11px/1 var(--font-mono); color: #111; background: #fff; border: 2px solid #333; border-radius: 4px; padding: 2px 5px; box-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.k-sw-kp { width: auto; height: auto; background: #fff; color: #111; border: 1px solid #333; border-radius: 3px; font: 700 10px/1.2 var(--font-mono); padding: 0 3px; }
+.k-ctl-b { width: auto !important; min-width: 44px; padding: 0 8px; font: 700 13px/30px var(--font-body); text-align: center; text-decoration: none; color: #1a1a1a; background: #fff; }
+.k-ctl-on { background: #1a73e8 !important; color: #fff !important; }
+.k-ctl-b:hover { background: #f0f0f0; }
+.k-map.k-full { position: fixed !important; inset: 0; width: 100% !important; height: 100vh !important; height: 100dvh !important; max-height: none; min-height: 0; border: 0; border-radius: 0; z-index: 3000; }
+body.k-fs { overflow: hidden; }
+.k-ver { font-size: 11px; color: var(--muted); margin: 14px 0 0; text-align: right; }
+.k-me { width: 22px; height: 22px; border-radius: 50%; background: #1a73e8; border: 4px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25), 0 1px 4px rgba(0,0,0,.5); }
+.k-list { display: grid; gap: 6px; }
+.k-sec { font: inherit; text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 0 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+.k-sec { --c: var(--green); touch-action: manipulation; }
+.k-sec[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 16%, var(--surface)); }
+.k-no { font-family: var(--font-mono); font-size: 12px; color: var(--green); align-self: center; }
+.k-sub { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+.k-btn:focus-visible, .k-chip:focus-visible, .k-sec:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+@media (max-width: 800px) {
+  .k-body { grid-template-columns: 1fr; }
+  .k-side { max-height: none; }
+  .k-map { height: 62vh; }
+}
+</style>
+
+<header class="top">
+  <div class="livery" aria-hidden="true"></div>
+  <div class="wrap">
+    <p class="eyebrow">GPR MOBILE MAPPING SYSTEM 3D</p>
+    <h1>GMS3 手順書</h1>
+    <div class="chapters" role="tablist" aria-label="手順書の章">
+      <button class="chapter" role="tab" aria-selected="true" id="ch-names">各部の名称</button>
+      <button class="chapter" role="tab" aria-selected="false" id="ch-kushiro">釧路ルート</button>
+      <button class="chapter" role="tab" aria-selected="false" id="ch-prep">準備</button>
+      <button class="chapter" role="tab" aria-selected="false" id="ch-meas">測定中</button>
+      <button class="chapter" role="tab" aria-selected="false" id="ch-note">勤務中の注意点</button>
+      <button class="chapter" role="tab" aria-selected="false" id="ch-prog">進捗</button>
+    </div>
+  </div>
+</header>
+
+<div class="places-bar">
+  <div class="wrap">
+    <div class="places" role="tablist" aria-label="場所" id="places"></div>
+  </div>
+</div>
+
+<main class="wrap">
+  <div id="manual">
+  <section id="panel" role="tabpanel" aria-live="polite"></section>
+  </div>
+  <section id="kushiro" role="tabpanel" aria-label="釧路ルート" hidden></section>
+  <section id="meas" role="tabpanel" aria-label="測定中" hidden>
+    <h2 class="p-h">測定中</h2>
+    <ol class="p-list">
+      <li>自分の携帯に調査地のマイマップを入れる</li>
+      <li>現在地と調査地の確認をする</li>
+      <li>調査は、キロポストを元に調査する</li>
+      <li>9km毎にプロジェクトを作るため、事前に始点終点のキロポストを決める</li>
+      <li>始点に到着する前に、運転手に「あと＊km」と言ってナビサポートする。<br>各キロポストを過ぎるときに、「＊キロポストを通過します」とドライバーと後方のオペレータに伝える。</li>
+      <li>開始点から500m手前、200m手前、100m手前と、グーグルマップからおおよその位置を同様に伝える。</li>
+      <li>100mをきって目視ができたら、「開始点＊キロポストを目視できました」と伝える。</li>
+      <li>調査測線は、9km毎の測線を調査します。<br>レーダーの幅が2.4mなので、一車線の場合は、上り測線を右寄り（R）と左寄り（L）で走り、下り測線も同様に二回走ります。</li>
+      <li>測線内に、右折レーン、左折レーンが赤色表示されていれば、それも測定します。<br>右折・左折レーンも、右寄り・左寄りの二回走ります。</li>
+    </ol>
+  </section>
+  <section id="note" role="tabpanel" aria-label="勤務中の注意点" hidden>
+    <h2 class="p-h">勤務中の注意点</h2>
+    <ol class="p-list">
+      <li>業務中は、私用で携帯電話は使わないこと。</li>
+      <li>業務中は、居眠りをしないこと。<br>居眠りをしないように、キロポストを各ポストが過ぎるときに声を出して伝える。</li>
+      <li>昼食は移動しながら食べる場合があるので、班長から昼前の休憩時に指示があります。</li>
+      <li>ホテルを出発する時刻は、前日に班長が決めます。必ず出発の10分前にはロビーに出ておくこと。</li>
+      <li>ヘルメットは、車から出るときは、必ずかぶります。</li>
+      <li>反射する黄色い服を、車に乗ったら常に着ておきます。すぐ外に出ることがあるためです。</li>
+      <li>ヒグマ対策用のスプレーが、運転席と助手席の間にあります。プラスチックのピンを外し、消火器のようにノブを押すと作動します。</li>
+      <li>喫煙者は、車内ではタバコを吸わないこと。</li>
+    </ol>
+  </section>
+  <section id="prog" role="tabpanel" aria-label="進捗" hidden></section>
+  <section id="prep" role="tabpanel" aria-label="準備" hidden>
+    <h2 class="p-h">準備手順</h2>
+    <ol class="p-list">
+      <li>設置準備ができる広い場所（コンビニ等）まで車で移動する</li>
+      <li>鍵で機器室の扉を開ける</li>
+      <li>3Dレーダーを設置する</li>
+      <li>屋根部・機器室内の機器をケーブル接続し、電源をつける</li>
+      <li>発電機を始動する</li>
+      <li>カメラPCとレーダーPCの準備をする</li>
+      <li>KY活動をする</li>
+      <li>調査地まで移動する</li>
+    </ol>
+  </section>
+</main>
+
+<dialog id="lb" aria-label="写真の拡大表示">
+  <div class="lb">
+    <img id="lb-img" alt="">
+    <div class="lb-bar"><span id="lb-cap"></span><button class="close" id="lb-close" type="button">閉じる</button></div>
+  </div>
+</dialog>
+
+<script src="lib/leaflet.js?v=r22"></script>
+<script src="lib/leaflet-rotate.js?v=r22"></script>
+<script src="kushiro-data.js?v=r22"></script>
+<script src="kushiro.js?v=r22"></script>
+<script src="progress-config.js?v=r22"></script>
+<script src="progress.js?v=r22"></script>
+<script>
+(function () {
+  var Q = "要確認";
+  var TABS = [
+    { id: "exterior", label: "車両全体",
+      lead: "前方が運転室(キャブ)、後方の白い箱が機器室です。",
+      video: { src: "vid/exterior.mp4", poster: "vid/exterior.jpg", cap: "車両の外側を一周した動画(約26秒)" },
+      cards: [
+        { img: "img/p37.jpg", title: "車両前面", parts: [
+          ["運転室(キャブ)", "前方の運転部分。"],
+          ["警光灯", "運転室の屋根にあるオレンジ色の回転灯。"] ] },
+        { img: "img/p38.jpg", title: "車両後面", parts: [
+          ["後方表示板", "後方にある電光掲示板。運転室の表示切替スイッチで表示を切り替える。"],
+          ["全方位カメラ", "機器室の屋根の上に立っている黒いカメラ。"],
+          ["3Dレーダー収納扉", "3Dレーダーを格納する。道路の水たまりを除去するスクレーパーも格納する。"] ] },
+        { img: "img/p34.jpg", title: "車両左側(進行方向の左右)", parts: [
+          ["機器室の扉", "測量機器を収納している後方の箱。側面に出入口のドアがある。"],
+          ["エアコン室外機", "機器室の後ろ下にある白い機器。"],
+          ["3Dレーダーアンテナ", "車体の下にある黄色い板状の部分。"] ] },
+        { img: "img/p04.jpg", title: "車両右側(進行方向の左右)", parts: [
+          ["運転室(キャブ)", "ダブルキャブ。運転席のほかに後部座席がある。"],
+          ["機器室", "車体側面にGMS3のロゴ。"],
+          ["3Dレーダー格納小窓", "3Dレーダーを固定する。"],
+          ["発電機格納扉", "発電機が収納されている。"] ] }
+      ] },
+    { id: "roof", label: "屋根上",
+      lead: "機器室の屋根には、3Dレーダーの位置を測るGPSと、全方位カメラ、カメラの位置を測るGPSがあります。",
+      video: null,
+      cards: [
+        { img: "img/p36.jpg", title: "機器室の屋根(全体)", parts: [
+          ["GNSSアンテナ", "運転室側のステンレスのカバーの中。レール上で位置を動かせる。"],
+          ["ガーミンアンテナ", "屋根の後方寄り。ケーブルを屋根の穴から室内へ通している。"],
+          ["全方位カメラ昇降装置", "屋根の後方にある四角い開口部。"],
+          ["ターゲットマーク", "屋根の四隅などにある白黒の蝶ネクタイ形の標識。"] ] },
+        { img: "img/p19.jpg", title: "屋根の運転室側", parts: [
+          ["GNSSアンテナ(位置調整レール付き)", "カバーのスリットに沿って動かす。目盛りは L10・0・R10。3Dレーダーアンテナの中心にGNSSも設置する。"],
+          ["警光灯", "運転室の屋根のオレンジ色の回転灯。"] ] },
+        { img: "img/p32.jpg", title: "屋根の後方", parts: [
+          ["全方位カメラ", "後ろ側へ立ち上げた状態の黒いカメラ。"],
+          ["全方位カメラ昇降装置", "カメラを出し入れする枠とレール。"],
+          ["ターゲットマーク", "四隅にある白黒の標識。"] ] },
+        { img: "img/p31.jpg", title: "全方位カメラ昇降装置(拡大)", parts: [
+          ["全方位カメラ", "黒い箱型。側面に丸いレンズが並ぶ。測定中は、カメラを使って全周囲の写真を撮影する。"],
+          ["昇降機構", "モーターと軸でカメラを上げ下げする部分。機器室に設置している操作ボックスで昇降操作する。"] ] },
+        { img: "img/p35.jpg", title: "ガーミンアンテナ", parts: [
+          ["ガーミンアンテナ", "黒い円盤形。屋根に置いてある。カメラの位置をGPS衛星を使って計測するアンテナ。"],
+          ["ケーブル引き込み穴", "屋根の穴。ケーブルは室内側へ通る。"] ] }
+      ] },
+    { id: "under", label: "車体下・外部機器",
+      lead: "車体の下と外側にある、アンテナ、操作箱、発電機などです。",
+      video: null,
+      cards: [
+        { img: "img/p16.jpg", title: "3Dレーダーアンテナ(アンテナ部)", parts: [
+          ["3Dレーダーアンテナ", "黄色い板状の部分。表面に 3D-RADAR の表記がある。路面を走査する。\n使用周波数帯域:200MHz〜3GHz\nサイズ:2,400×800×140mm\n重さ:50kg\n最大チャンネル数:28チャンネル(7.5cmピッチ)\n探査深度:1.5〜2.0m程度\n製造元:[[3D-RADAR|https://3d-radar.com/]]"] ] },
+        { img: "img/p03.jpg", title: "3Dレーダーアンテナを地面に置いた状態", parts: [
+          ["3Dレーダーアンテナ", "車両の後ろに出して置いた状態。\n二人で前後に分かれて収納庫から取り出し、車両下部へ設置する。"] ] },
+        { img: "img/p25.jpg", title: "アンテナ昇降操作ボックス(車体の下)", parts: [
+          ["アンテナ昇降操作ボックス", "車体の下に付いた灰色の操作箱。アンテナの上下と左右を動かす。"],
+          ["昇降レール", "ボックスの横にあるアルミのレール。4ケのピンで固定する。"] ] },
+        { img: "img/p26.jpg", title: "アンテナ昇降操作ボックスのスイッチ部", parts: [
+          ["メインスイッチ", "赤いレバー。入れるとメイン確認灯(赤)が点く。\n3Dレーダーの昇降等を操作するための大元のスイッチ。"],
+          ["メイン確認灯・センター確認灯", "赤と緑のランプ。"],
+          ["上下スイッチ・左右スイッチ", "上下左右を操作。",],
+          ["ブレーキの表示", "「ブレーキ 常時ON」の貼り紙がある。",] ] },
+        { img: "img/p12.jpg", title: "車体下の左側", parts: [
+          ["尿素水(AdBlue)タンク", "青いキャップのタンク。"],
+          ["バッテリー", "車両用のバッテリー。"] ] },
+        { img: "img/p41.jpg", title: "発電機", parts: [
+          ["発電機(Earth Power EF2500i)", "網の入った収納部に載せたインバーター発電機。"],
+          ["ON/STOPスイッチ・エコノミースイッチ", "調査中は左上の2つのスイッチをON。"],
+          ["出力コンセント", "調査中はコンセントを接続。"],
+          ["始動ハンドル", "左のくぼみにある取っ手を引っ張りエンジンを始動。"] ] },
+        { img: "img/p43.jpg", title: "エアコン室外機と\n上部のエンコーダー(取付前)", parts: [
+          ["エアコン室外機", "白いカバーにファンが付いた機器。車体の下にある。"],
+          ["エンコーダー取付金具", "銀色の取付金具。室外機の上部に付いている。"] ] },
+        { img: "img/p45.jpg", title: "外部エンコーダー", parts: [
+          ["外部エンコーダー", "内部のエンコーダー機器と接続する。"] ] }
+      ] },
+    { id: "cab", label: "運転室",
+      lead: "ダッシュボードの上に、後方表示板を操作する16個のボタンがあります。",
+      video: { src: "vid/driver.mp4", poster: "vid/driver.jpg", cap: "運転室の中を撮った動画(約22秒)", portrait: true },
+      cards: [
+        { img: "img/p02.jpg", title: "ダッシュボードの上", parts: [
+          ["表示切替スイッチ", "後方表示板の文字を切り替える操作部。ボタンは上段①〜⑧、下段⑨〜⑯。"],
+          ["カーナビ", "ダッシュボードの中央。"] ] },
+        { img: "img/p01.jpg", title: "表示切替スイッチ(斜めから)", parts: [
+          ["ボタン①〜⑯", "「調査中」「追突注意」などの文字が付いたボタン。押すと緑に点灯する。\n調査中は左上の①を押す。"],
+          ["電源スイッチ", "ハンドル左側上端部のボタン。"] ] },
+        { img: "img/p27.jpg", title: "運転席のまわり", parts: [
+          ["シフトレバー", "運転席の右にあるオートマのレバー。"],
+          ["サイドブレーキレバー", "運転席と助手席の間。"],
+          ["ハザードスイッチ", "ナビの右の赤いスイッチ。"] ] },
+        { img: "img/p05.jpg", title: "アルコール検知器", note: "白いスティック型。早朝運転時に運転手はチェックする。", parts: [] },
+        { img: "img/p10.jpg", title: "ドライブレコーダー", note: "運転始動時に自動で電源ONとなる。\nエンジン始動中は常時記録。\n事故をした時の状況確認に使用。\n音声及び車内車外の映像及び音声を録画。", parts: [] },
+        { img: "img/p09.jpg", title: "クマ撃退スプレー", note: "白色の固定具を外し、消火器の要領で10m以内にクマが近づいたときにレバーを握り、撃退する。", parts: [] }
+      ] },
+    { id: "rear", label: "後部座席",
+      lead: "後部座席の前に、計測データを見るための作業台とモニターがあります。",
+      video: { src: "vid/rear.mp4", poster: "vid/rear.jpg", cap: "後部座席の作業台を撮った動画(約16秒)" },
+      cards: [
+        { img: "img/p22.jpg", title: "作業台の全景", parts: [
+          ["作業台", "後部座席の前の白い天板。"],
+          ["モニター×3台", "左側モニター(カメラモニター):全周囲カメラの記録保存を操作。\n中央モニター・右側モニター(レーダーモニター):3Dレーダーの記録保存解析を操作。"] ] },
+        { img: "img/p24.jpg", title: "作業台の背面側", parts: [
+          ["電源コンセント", "作業台の側面に付いた白いコンセント。"] ] },
+      ] },
+    { id: "equip", label: "機器室",
+      lead: "測量機器を収めた部屋です。ペグボードの扉の中と、作業台の上に機器が並びます。",
+      video: { src: "vid/equip.mp4", poster: "vid/equip.jpg", cap: "機器室の機器を順に撮った動画(約15秒)" },
+      cards: [
+        { img: "img/p28q.jpg", title: "機器室ラック(全景)", note: "写真の番号は、下の項目の番号に対応しています。", parts: [
+          ["① 3Dレーダー本体", "右上の青と白の機器。赤い電源ランプが付く。"],
+          ["② カメラPC", "中央上の小型のパソコン。"],
+          ["③ エンコーダー", "HDDケースの右にあるベージュの機器。"],
+          ["④ ハードディスク", "左上の黒い2台入りのケース。"],
+          ["⑤ ヘミのバッテリー電源", "ペグボード扉の内側(下段)の右奥。"],
+          ["⑥ 変圧器", "ペグボード扉の内側(下段)の右側。"],
+          ["⑦ ヘミ", "ペグボード扉の内側(下段)の左側。"] ] },
+        { img: "img/p42.jpg", title: "① 3Dレーダー本体", parts: [
+          ["電源ボタン", "右上のボタン。電源の入り切りをする。"],
+          ["電源端子", "右下接続部。\n⑥の変圧器からの電源コードを接続する。"] ] },
+        { img: "img/p18.jpg", title: "② カメラPC", parts: [
+          ["電源ボタン", "背面にボタンがある。\n起動するときは、この電源ボタンを押す。切るときは、後部座席のモニター・キーボードの操作でシャットダウンする。\n前面の入り切りスイッチは触らない。"],
+          ["GPS端子", "屋根部のガーミンと接続する。"] ] },
+        { img: "img/p44.jpg", title: "③ エンコーダー", parts: [
+          ["電源スイッチ", "右側にある小さな入り切りスイッチ。"],
+          ["キースイッチ", "上面の鍵。90度回してON/OFFする。\n起動時は電源スイッチを入れ、そのあとキースイッチを回す。\n終了時は、キースイッチを回して、そのあと電源スイッチを切る。"],
+          ["エンコーダーケーブル", "外部エンコーダーと接続する。"] ] },
+        { img: "img/p11.jpg", title: "④ ハードディスク", parts: [
+          ["電源", "背面に電源スイッチがある。\n上下段の二か所にハードディスクを入れる。\n通常は下の段にハードディスクを差し込んで入れる。"] ] },
+        { img: "img/p47.jpg", title: "④-2 ハードディスク", note: "Seagate BarraCuda の2TB。\n3.5インチ。", parts: [] },
+        { img: "img/p20.jpg", title: "⑤ ヘミのバッテリー電源", parts: [
+          ["ヘミのバッテリー電源", "ヘミと接続されているバッテリーケーブル(赤色と黒色のワニグチコード)を、赤はプラス、黒はマイナスに接続する。\nボタンは触らない。\n退勤時に、回収してホテルで翌日測定のために、充電する。"] ] },
+        { img: "img/p40.jpg", title: "⑥ 変圧器", note: "3Dレーダーの電源口と接続。", parts: [
+          ["電源スイッチ", "手前の入り切りスイッチで電源をON、OFFにする。"],
+          ["DC12Vソケット", "右側のカバー付きソケット。"] ] },
+        { img: "img/p23.jpg", title: "⑦-1 ヘミ", parts: [
+          ["電源", "ヘミのバッテリー電源と接続して起動させる。"],
+          ["USB", "起動時、白色のUSBが画面下側のUSBポートに接続されているか確認。\n測定終了時は、USBを抜き、カメラPCのUSBポートに接続して、USBのデータをカメラPCに取り込み、そのあと、ヘミUSBポートへUSBを差し戻す。"] ] },
+        { img: "img/p48.jpg", title: "⑦-2 ヘミの上部", parts: [
+          ["操作ボタン", "▲と▼、中央の緑の選択ボタン。"],
+          ["赤黄緑ランプ", "ヘミのバッテリー電源とケーブルで接続すると、ランプが表示する。\n緑のランプが付くまで待つ。\nそのあと、Data Logging選択、Config選択、Start Recording選択。hemi_***.bin が表示される。その表示を写真撮影する。"] ] },
+        { img: "img/p17.jpg", title: "エアコン室内機", note: "壁に掛かっている白い機器。室外機は車体の後ろ下。\n電源は右側の黒色入り切りスイッチをONにして、表示パネルのONボタンを押す。", parts: [] },
+        { img: "img/p39.jpg", title: "カメラ装置スイッチ(壁の小箱)", parts: [
+          ["上下のスイッチ", "下側のスイッチで、カメラの昇降を操作する。\n上昇するときは、屋根部カメラの蓋が外れているか確認。"] ] }
+      ] },
+    { id: "gear", label: "現場の道具",
+      lead: "現場の記録や、予備の機材、手順のメモです。",
+      video: null,
+      cards: [
+        { img: "img/p29.jpg", title: "工事黒板", parts: [
+          ["工事黒板", "業務名、班名、KY状況、日付を書いて写真に写す。"] ] },
+        { img: "img/p15.jpg", title: "現場写真の撮影", parts: [
+          ["三脚とカメラ", "黒板を置いて車両を撮影する。"] ] }
+      ] }
+  ];
+
+  var places = document.getElementById("places");
+  var panel = document.getElementById("panel");
+  var lb = document.getElementById("lb");
+  var lbImg = document.getElementById("lb-img");
+  var lbCap = document.getElementById("lb-cap");
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function openLb(src, title) {
+    lbImg.src = src; lbImg.alt = title; lbCap.textContent = title;
+    if (typeof lb.showModal === "function") lb.showModal(); else lb.setAttribute("open", "");
+  }
+  document.getElementById("lb-close").addEventListener("click", function () { lb.close(); });
+  lb.addEventListener("click", function (ev) { if (ev.target === lb) lb.close(); });
+
+  // 説明文の中の [[表示文字|URL]] をリンクにする(https のみ)
+  function ddNode(text) {
+    var dd = el("dd");
+    var re = /\[\[([^|\]]+)\|(https:\/\/[^\]\s]+)\]\]/g, last = 0, m;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) dd.appendChild(document.createTextNode(text.slice(last, m.index)));
+      var a = el("a", null, m[1]);
+      a.href = m[2]; a.target = "_blank"; a.rel = "noopener noreferrer";
+      dd.appendChild(a);
+      last = re.lastIndex;
+    }
+    if (last < text.length) dd.appendChild(document.createTextNode(text.slice(last)));
+    return dd;
+  }
+
+  function renderCard(c) {
+    var card = el("article", "card");
+    var shot = el("button", "shot");
+    shot.type = "button";
+    shot.style.setProperty("--img", "url(\"" + c.img + "\")");
+    shot.setAttribute("aria-label", c.title + " の写真を拡大");
+    var img = el("img");
+    img.src = c.img; img.alt = c.title; img.loading = "lazy"; img.decoding = "async";
+    shot.appendChild(img);
+    shot.addEventListener("click", function () { openLb(c.img, c.title); });
+    card.appendChild(shot);
+
+    card.appendChild(el("h3", null, c.title));
+    var body = el("div", "card-body");
+    if (c.note) body.appendChild(el("p", "note", c.note));
+    var dl = el("dl", "parts");
+    c.parts.forEach(function (p) {
+      var row = el("div", "part");
+      var dt = el("dt", null, p[0]);
+      if (p[2]) dt.appendChild(el("span", "chip", p[2]));
+      row.appendChild(dt);
+      row.appendChild(ddNode(p[1]));
+      dl.appendChild(row);
+    });
+    body.appendChild(dl);
+    card.appendChild(body);
+    return card;
+  }
+
+  function show(id, pushHash) {
+    var tab = TABS.filter(function (t) { return t.id === id; })[0] || TABS[0];
+    Array.prototype.forEach.call(places.children, function (b) {
+      b.setAttribute("aria-selected", b.dataset.id === tab.id ? "true" : "false");
+    });
+    panel.textContent = "";
+    var head = el("div", "panel-head");
+    head.appendChild(el("h2", null, tab.label));
+    head.appendChild(el("p", null, tab.lead));
+    panel.appendChild(head);
+
+    if (tab.video) {
+      var fig = el("figure", "movie" + (tab.video.portrait ? " portrait" : ""));
+      var v = document.createElement("video");
+      v.controls = true; v.preload = "metadata"; v.setAttribute("playsinline", "");
+      v.poster = tab.video.poster; v.src = tab.video.src;
+      fig.appendChild(v);
+      fig.appendChild(el("figcaption", null, tab.video.cap));
+      panel.appendChild(fig);
+    }
+    var grid = el("div", "grid");
+    tab.cards.forEach(function (c) { grid.appendChild(renderCard(c)); });
+    panel.appendChild(grid);
+    if (pushHash) { try { history.replaceState(null, "", "#" + tab.id); } catch (e) {} }
+  }
+
+  TABS.forEach(function (t) {
+    var b = el("button", "place", t.label);
+    b.type = "button"; b.setAttribute("role", "tab"); b.dataset.id = t.id;
+    b.addEventListener("click", function () { show(t.id, true); window.scrollTo({ top: 0 }); });
+    places.appendChild(b);
+  });
+
+  var chNames = document.getElementById("ch-names");
+  var manual = document.getElementById("manual"), kview = document.getElementById("kushiro");
+  var CH = { kushiro: ["ch-kushiro", "kushiro"], prep: ["ch-prep", "prep"], meas: ["ch-meas", "meas"], note: ["ch-note", "note"], prog: ["ch-prog", "prog"] };
+  function chapter(name, pushHash) {
+    var n = !CH[name];
+    manual.hidden = !n; document.querySelector(".places-bar").hidden = !n;
+    chNames.setAttribute("aria-selected", n ? "true" : "false");
+    Object.keys(CH).forEach(function (k) {
+      document.getElementById(CH[k][1]).hidden = k !== name;
+      document.getElementById(CH[k][0]).setAttribute("aria-selected", k === name ? "true" : "false");
+    });
+    if (name === "kushiro") window.initKushiro(kview);
+    if (name === "prog") window.initProgress(document.getElementById("prog"));
+    if (pushHash && !n) { try { history.replaceState(null, "", "#" + name); } catch (e) {} }
+    else if (pushHash) { show(TABS[0].id, true); }
+  }
+  chNames.addEventListener("click", function () { chapter("names", true); window.scrollTo({ top: 0 }); });
+  Object.keys(CH).forEach(function (k) {
+    document.getElementById(CH[k][0]).addEventListener("click", function () { chapter(k, true); window.scrollTo({ top: 0 }); });
+  });
+
+  var start = (location.hash || "").replace("#", "");
+  show(CH[start] ? "" : start, false);
+  if (CH[start]) chapter(start, false);
+})();
+</script>
+
+</html>
