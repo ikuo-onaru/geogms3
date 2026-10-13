@@ -8,7 +8,7 @@
   function r3(x) { return Math.round(x * 1000) / 1000; }
   function fk(x) { return String(r3(x)); }
   function load() { try { done = JSON.parse(localStorage.getItem(LS) || "{}") || {}; } catch (e) { done = {}; } }
-  function save() { try { localStorage.setItem(LS, JSON.stringify(done)); } catch (e) {} }
+  function save() { try { localStorage.setItem(LS, JSON.stringify(done)); } catch (e) {} try { window.dispatchEvent(new Event("gms-progress")); } catch (e) {} }
   function setStatus(t) { if (st) st.textContent = t; }
   // 記録は「路線|開始kp|終了kp」というキーで保存する(共有側は従来のまま使える)
   function segsOf(no) {
@@ -56,7 +56,61 @@
   }
   function prefixEnd(s) { var m = merged(s); return m.length && m[0].a <= s.a + 1e-9 ? m[0].b : s.a; }
   function suffixStart(s) { var m = merged(s); return m.length && m[m.length - 1].b >= s.b - 1e-9 ? m[m.length - 1].a : s.b; }
+  // ---- 目盛り(1kmごとのマス)で塗る ----
+  function cells(s) {
+    var c = [], k = s.a;
+    while (k < s.b - 1e-9) { var n = Math.min(s.b, Math.floor(k + 1e-9) + 1); c.push({ a: k, b: n }); k = n; }
+    return c;
+  }
+  function covered(s, a, b) {
+    return merged(s).some(function (g) { return g.a <= a + 1e-6 && g.b >= b - 1e-6; });
+  }
+  // 範囲(a〜b)を未完了に戻す。重なる記録は削除し、はみ出た部分は残す
+  function unpaint(s, a, b) {
+    segsOf(s.no).forEach(function (g) {
+      if (g.b <= a + 1e-9 || g.a >= b - 1e-9) return;
+      delete done[g.k]; push(g.k, false);
+      if (g.a < a - 1e-9) { var k1 = s.no + "|" + fk(g.a) + "|" + fk(a); done[k1] = 1; push(k1, true); }
+      if (g.b > b + 1e-9) { var k2 = s.no + "|" + fk(b) + "|" + fk(g.b); done[k2] = 1; push(k2, true); }
+    });
+  }
+  function paint(s, a, b) { var k = s.no + "|" + fk(a) + "|" + fk(b); done[k] = 1; push(k, true); }
+  function toggleCells(s, list) {
+    var all = list.every(function (c) { return covered(s, c.a, c.b); });
+    var a = list[0].a, b = list[list.length - 1].b;
+    if (all) unpaint(s, a, b); else paint(s, a, b);
+    save(); render();
+  }
+  function lab(v) { return c1(v).replace(/\.0$/, ""); }
+  function ruler(s) {
+    var wrap = el("div", "pg-ruler"), cs = cells(s), k0 = Math.ceil(s.a - 1e-9), rows = [], cur = null;
+    cs.forEach(function (c) {
+      var idx = Math.floor((Math.floor(c.a + 1e-9) - k0 + (c.a < k0 - 1e-9 ? 0 : 0)) / 9);
+      if (c.a < k0 - 1e-9) idx = 0;
+      if (!rows[idx]) rows[idx] = []; rows[idx].push(c);
+    });
+    rows.forEach(function (list) {
+      if (!list) return;
+      var row = el("div", "pg-rrow"), line = el("div", "pg-rline");
+      list.forEach(function (c) {
+        var cell = el("button", "pg-cell"); cell.type = "button"; 
+        cell.setAttribute("aria-pressed", covered(s, c.a, c.b) ? "true" : "false");
+        cell.setAttribute("aria-label", fk(c.a) + "から" + fk(c.b) + "kp");
+        cell.appendChild(el("span", "pg-tick", lab(c.a)));
+        cell.addEventListener("click", function () { toggleCells(s, [c]); });
+        line.appendChild(cell);
+      });
+      var endl = el("span", "pg-tick pg-tick-end", lab(list[list.length - 1].b));
+      var all = el("button", "pg-rall", "行全体"); all.type = "button";
+      all.addEventListener("click", function () { toggleCells(s, list); });
+      line.lastChild.appendChild(endl); row.appendChild(line); row.appendChild(all); wrap.appendChild(row);
+    });
+    wrap.appendChild(el("div", "pg-hint", "マスは1kmごとです。測定した区間をタップすると色が付きます(もう一度で解除)。「行全体」で、その行をまとめて塗れます。"));
+    return wrap;
+  }
   function render() {
+    var sy = window.scrollY;
+    if (!root) return;
     typing = false; root.textContent = "";
     var total = 0, dk = 0;
     secs.forEach(function (s) { total += s.len; dk += Math.min(s.len, doneKm(s)); });
@@ -74,7 +128,7 @@
     tb.appendChild(eb); if (url) tb.appendChild(rb);
     st = el("span", "k-status", url ? "全員で共有中" : "共有の設定前です(この端末のみに保存)");
     tb.appendChild(st); root.appendChild(tb);
-    if (edit) root.appendChild(el("p", "k-note", "測定が終わった範囲を、開始kpと終了kpで入力して「追加」を押してください(起点側からでも終点側からでも、順番は問いません)。間違えた記録は「×」で消せます。"));
+    if (edit) root.appendChild(el("p", "k-note", "路線ごとに「目盛りで区間を塗る」を押すと、1kmごとのマスが出ます。測定した区間をタップして塗ってください(起点側からでも終点側からでも構いません)。"));
     var dt = el("details", "pg-tbl"); dt.appendChild(el("summary", null, "R8年度 釧路開発建設部 路線表(実施計画書 表1.2より)"));
     var tw = el("div", "pg-tw"), tbl = el("table"), th = el("tr");
     ["区間", "路線", "区分", "始点kp", "終点kp", "路線延長", "計測延長", "備考"].forEach(function (h) { th.appendChild(el("th", null, h)); });
@@ -88,23 +142,26 @@
     var ts = el("tr", "pg-sum"); ["合計", "", "", "", "", tl.toFixed(3), tm.toFixed(3), ""].forEach(function (v) { ts.appendChild(el("td", null, v)); });
     tbl.appendChild(ts); tw.appendChild(tbl); dt.appendChild(tw); root.appendChild(dt);
     secs.forEach(function (s) {
-      var sd = Math.min(s.len, doneKm(s)), segs = segsOf(s.no);
+      var sd = Math.min(s.len, doneKm(s));
       var box = el("div", "pg-sec"), hd = el("div", "pg-hd");
       hd.appendChild(el("b", null, s.road + "(" + s.no + ") " + s.kind));
       hd.appendChild(el("span", "pg-n", c1(sd) + " / " + c1(s.len) + " km"));
       box.appendChild(hd);
       box.appendChild(el("div", "pg-kp", c1(s.a) + "kp ~ " + c1(s.b) + "kp" + (s.cls === "DID区間" ? "(DID区間)" : "")));
       box.appendChild(strip(s));
-      if (segs.length) {
+      var mg = merged(s);
+      if (mg.length) {
         var lst = el("div", "pg-done");
-        segs.forEach(function (g) {
-          var chip = el("span", "pg-chip", fk(g.a) + " 〜 " + fk(g.b) + " kp");
-          if (edit) { var x = el("button", "pg-x", "×"); x.type = "button"; x.setAttribute("aria-label", "この記録を消す"); x.addEventListener("click", function () { delSeg(g.k); }); chip.appendChild(x); }
-          lst.appendChild(chip);
-        });
+        mg.forEach(function (g) { lst.appendChild(el("span", "pg-chip", fk(g.a) + " 〜 " + fk(g.b) + " kp")); });
         box.appendChild(lst);
       } else box.appendChild(el("div", "pg-none", "まだ記録がありません"));
       if (edit) {
+        var tg = el("button", "k-btn pg-open", openSec[s.no] ? "目盛りを閉じる" : "目盛りで区間を塗る"); tg.type = "button";
+        tg.setAttribute("aria-pressed", openSec[s.no] ? "true" : "false");
+        tg.addEventListener("click", function () { openSec[s.no] = !openSec[s.no]; render(); });
+        box.appendChild(tg);
+        if (openSec[s.no]) box.appendChild(ruler(s));
+        var dd = el("details", "pg-num"); dd.appendChild(el("summary", null, "数字で入力する"));
         var f = el("div", "pg-form");
         var ia = el("input"), ib = el("input");
         [ia, ib].forEach(function (i) { i.type = "number"; i.step = "any"; i.inputMode = "decimal"; i.addEventListener("input", function () { typing = true; }); });
@@ -112,23 +169,18 @@
         var go = el("button", "k-btn", "追加"); go.type = "button";
         go.addEventListener("click", function () { if (addSeg(s, parseFloat(ia.value), parseFloat(ib.value))) render(); });
         f.appendChild(ia); f.appendChild(el("span", null, "〜")); f.appendChild(ib); f.appendChild(go);
-        box.appendChild(f);
-        var q = el("div", "pg-quick");
-        var p0 = prefixEnd(s), s0 = suffixStart(s);
-        var fw = el("button", "k-btn", "起点側から続き"); fw.type = "button";
-        fw.addEventListener("click", function () { ia.value = fk(p0); ib.value = fk(Math.min(s.b, Math.ceil(p0 + 9 - 1e-9))); typing = true; });
-        var bw = el("button", "k-btn", "終点側から続き"); bw.type = "button";
-        bw.addEventListener("click", function () { ib.value = fk(s0); ia.value = fk(Math.max(s.a, Math.floor(s0 - 9 + 1e-9))); typing = true; });
-        var all = el("button", "k-btn", "全区間"); all.type = "button";
-        all.addEventListener("click", function () { ia.value = fk(s.a); ib.value = fk(s.b); typing = true; });
-        q.appendChild(fw); q.appendChild(bw); q.appendChild(all); box.appendChild(q);
-        box.appendChild(el("div", "pg-hint", "「続き」は、記録済みの端から約9km先の整数kpまでを自動で入れます。数字は書き換えられます。"));
+        dd.appendChild(f); box.appendChild(dd);
       }
       root.appendChild(box);
     });
+    window.scrollTo(0, sy);
   }
-  window.initProgress = function (r) {
-    root = r; load(); render();
-    if (!started) { started = true; pull(); setInterval(function () { if (!r.hidden && !edit) pull(); }, 30000); }
-  };
+  function statusOf(no) {
+    var s = secs.filter(function (x) { return x.no === no; })[0]; if (!s) return 0;
+    var d = doneKm(s); return d >= s.len - 0.06 ? 2 : d > 0.0005 ? 1 : 0;
+  }
+  window.GMS_PROGRESS = { status: statusOf, ranges: function () { var o = {}; secs.forEach(function (s) { var m = merged(s); if (m.length) o[s.no] = m.map(function (g) { return [g.a, g.b]; }); }); return o; } };
+  function boot() { if (started) return; started = true; load(); pull(); setInterval(function () { if (!edit) pull(); }, 30000); }
+  window.initProgress = function (r) { root = r; boot(); render(); };
+  boot();
 })();

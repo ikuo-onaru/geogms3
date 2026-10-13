@@ -21,6 +21,7 @@
   function itemStyle(it) {
     if (it.kind === "extra") return extraOn ? { color: it.color, w: it.base, op: 1, order: 20 } : null;
     if (!on[it.t]) return null;
+    if (it.kind === "done") return (!selCount || sel[it.s]) ? { color: "#9e9e9e", w: it.base + 1, op: 1, order: 30 } : null;
     var isSel = !selCount || sel[it.s], rank = it.t === "本線" ? 1 : 2;
     if (isSel) return { color: it.t === "本線" && selCount ? secColor[it.s] : it.color, w: selCount ? it.base + 1 : it.base, op: .95, order: (selCount ? 10 : 0) + rank };
     if (ghost) return { color: it.color, w: Math.max(2, it.base - 2), op: .18, order: 0 };
@@ -68,7 +69,7 @@
   function routeClick(ev) {
     var best = null, tol = 14;
     drawList.forEach(function (d) {
-      if (d.op < .5) return;
+      if (d.op < .5 || d.it.kind === "done") return;
       var prev = null, md = 1e9;
       d.it.latlngs.forEach(function (p) {
         var q = map.latLngToContainerPoint(p);
@@ -198,6 +199,7 @@
       if (v) endsLayer.addTo(map); else map.removeLayer(endsLayer);
     });
     chips.appendChild(be);
+    var gn = el("span", "k-chip k-chip-info"); var gs = el("span", "k-sw"); gs.style.background = "#9e9e9e"; gn.appendChild(gs); gn.appendChild(document.createTextNode("灰色 = 測定済み(進捗の記録)")); chips.appendChild(gn);
     side.appendChild(chips);
 
     side.appendChild(el("h3", "k-h", "周辺の施設(拡大すると表示)"));
@@ -226,7 +228,9 @@
       var mains = D.feats.filter(function (f) { return f.s === s.no && f.t === "本線"; });
       var km = Math.max.apply(null, mains.map(function (f) { return parseFloat(f.l); }));
       var b = el("button", "k-sec"); b.type = "button"; b.dataset.no = s.no; b.style.setProperty("--c", secColor[s.no]);
-      b.appendChild(el("b", null, s.road));
+      var ttl = el("span", "k-ttl"); ttl.appendChild(el("b", null, s.road));
+      var stt = el("span", "k-st k-st-0", "未調査"); stt.dataset.st = s.no; ttl.appendChild(stt);
+      b.appendChild(ttl);
       var nol = el("span", "k-no"); var sw2 = el("span", "k-swatch"); nol.appendChild(sw2); nol.appendChild(document.createTextNode(s.no)); b.appendChild(nol);
       var kpn = "";
       var sub = el("span", "k-sub");
@@ -326,9 +330,38 @@
     return [sp.pts[lo][0] + (sp.pts[hi][0] - sp.pts[lo][0]) * f, sp.pts[lo][1] + (sp.pts[hi][1] - sp.pts[lo][1]) * f];
   }
   function kpNearest(sp, ll) {
+    ll = Array.isArray(ll) ? { lat: ll[0], lng: ll[1] } : ll;
     var bi = 0, bd = 1e9;
     for (var i = 0; i < sp.pts.length; i++) { var d = kmDist([ll.lat, ll.lng], sp.pts[i]); if (d < bd) { bd = d; bi = i; } }
     return sp.k0 + sp.cum[bi] / sp.len * (sp.k1 - sp.k0);
+  }
+  /* 進捗タブで記録した「測定が終わった範囲」を、地図の上で灰色に塗る */
+  function rebuildDone() {
+    if (!map || !window.GMS_PROGRESS) return;
+    ITEMS = ITEMS.filter(function (it) { return it.kind !== "done"; });
+    var rg = window.GMS_PROGRESS.ranges();
+    Object.keys(rg).forEach(function (no) {
+      var sp = SECPATH[no]; if (!sp || !rg[no].length) return;
+      ITEMS.forEach(function (it) {
+        if (it.kind !== "feat" || it.s !== no) return;
+        if (!it.kv) it.kv = it.latlngs.map(function (p) { return kpNearest(sp, { lat: p[0], lng: p[1] }); });
+        var cur = [];
+        function flush() { if (cur.length > 1) ITEMS.push({ kind: "done", t: it.t, s: no, latlngs: cur, base: it.base, pz: {} }); cur = []; }
+        for (var i = 0; i < it.latlngs.length; i++) {
+          var k = it.kv[i], inn = rg[no].some(function (g) { return k >= g[0] - 1e-6 && k <= g[1] + 1e-6; });
+          if (inn) cur.push(it.latlngs[i]); else flush();
+        }
+        flush();
+      });
+    });
+    refreshRoutes();
+  }
+  function updateStatus() {
+    if (!window.GMS_PROGRESS || !window.GMS_PROGRESS.status) return;
+    document.querySelectorAll(".k-st").forEach(function (e) {
+      var v = window.GMS_PROGRESS.status(e.dataset.st), t = v === 2 ? "調査済" : v === 1 ? "調査中" : "未調査";
+      e.textContent = t; e.className = "k-st k-st-" + v;
+    });
   }
   function kpStep() { return 1; }
   function fmtKp(v) { return String(Math.round(v)); }
@@ -463,7 +496,8 @@
     root.appendChild(bar); root.appendChild(mapNote); root.appendChild(body);
     syncFollow();
     buildKp(); buildMap(box); buildPanel(side); applySel(false);
-    side.appendChild(el("p", "k-ver", "表示バージョン: r27(" + "tile" + ")"));
+    window.addEventListener("gms-progress", function () { rebuildDone(); updateStatus(); }); rebuildDone(); updateStatus();
+    side.appendChild(el("p", "k-ver", "表示バージョン: r31(" + "tile" + ")"));
     map.on("dragstart", function () { if (follow) { follow = false; syncFollow(); } });
   };
 })();

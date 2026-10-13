@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
-<link rel="stylesheet" href="lib/leaflet.css?v=r27">
+<link rel="stylesheet" href="lib/leaflet.css?v=r31">
 <style>
 /* Layout: 調査車両の塗装(緑のロゴ+黄色の帯)を手がかりにした、写真中心の手順書。
    上段に手順書の章タブ、その下に場所別の小タブ、本文は写真カードの一覧。 */
@@ -181,6 +181,18 @@ dialog::backdrop { background: rgba(8, 12, 10, .86); }
 .pg-form input { font: inherit; font-size: 16px; width: 110px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
 .pg-quick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .pg-hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+.pg-open { margin-top: 12px; }
+.pg-ruler { margin-top: 10px; }
+.pg-rrow { display: flex; align-items: flex-end; gap: 8px; margin-top: 4px; padding-top: 16px; position: relative; }
+.pg-rline { display: flex; flex: 1; min-width: 0; justify-content: flex-start; }
+.pg-cell { position: relative; flex: 0 0 10%; min-width: 0; height: 34px; padding: 0; border: 0; border-left: 1px solid var(--fg); border-top: 1px solid var(--fg); border-bottom: 1px solid var(--fg); background: var(--surface); cursor: pointer; touch-action: manipulation; }
+.pg-cell:last-child { border-right: 1px solid var(--fg); }
+.pg-cell[aria-pressed="true"] { background: var(--green); }
+.pg-tick { position: absolute; top: -16px; left: -4px; font-size: 11px; color: var(--muted); line-height: 14px; white-space: nowrap; pointer-events: none; }
+.pg-tick-end { left: auto; right: -6px; }
+.pg-rall { font: inherit; font-size: 12px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; flex: none; touch-action: manipulation; }
+.pg-num { margin-top: 10px; font-size: 13px; }
+.pg-num summary { cursor: pointer; color: var(--muted); }
 .pg-blocks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .pg-blk { font: inherit; font-size: 13px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; touch-action: manipulation; }
 .pg-blk[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: var(--on-green); font-weight: 700; }
@@ -202,6 +214,7 @@ dialog::backdrop { background: rgba(8, 12, 10, .86); }
 .k-chip { font: inherit; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
 .k-chip[aria-pressed="false"] { opacity: .45; text-decoration: line-through; }
 .k-chip:has(.k-dot)[aria-pressed="false"] { text-decoration: none; opacity: .8; }
+.k-chip-info { cursor: default; }
 .k-sw { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
 .k-sw-dash { background: repeating-linear-gradient(90deg, #d32f2f 0 3px, transparent 3px 6px); }
 .k-sw-pin { width: 10px; height: 10px; border-radius: 50%; background: #2c7d2e; box-shadow: 8px 0 0 #c62828; margin-right: 8px; }
@@ -245,6 +258,10 @@ body.k-fs { overflow: hidden; }
 .k-sec { font: inherit; text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 0 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
 .k-sec { --c: var(--green); touch-action: manipulation; }
 .k-sec[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 16%, var(--surface)); }
+.k-ttl { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.k-st { font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: var(--surface-2); }
+.k-st-1 { border-color: var(--amber); color: var(--fg); background: transparent; box-shadow: inset 0 0 0 1px var(--amber); }
+.k-st-2 { border-color: var(--green); background: var(--green); color: var(--on-green); }
 .k-no { font-family: var(--font-mono); font-size: 12px; color: var(--green); align-self: center; }
 .k-sub { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
 .k-btn:focus-visible, .k-chip:focus-visible, .k-sec:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
@@ -332,12 +349,12 @@ body.k-fs { overflow: hidden; }
   </div>
 </dialog>
 
-<script src="lib/leaflet.js?v=r27"></script>
-<script src="lib/leaflet-rotate.js?v=r27"></script>
-<script src="kushiro-data.js?v=r27"></script>
-<script src="kushiro.js?v=r27"></script>
-<script src="progress-config.js?v=r27"></script>
-<script src="progress.js?v=r27"></script>
+<script src="lib/leaflet.js?v=r31"></script>
+<script src="lib/leaflet-rotate.js?v=r31"></script>
+<script src="kushiro-data.js?v=r31"></script>
+<script src="kushiro.js?v=r31"></script>
+<script src="progress-config.js?v=r31"></script>
+<script src="progress.js?v=r31"></script>
 <script>
 (function () {
   var Q = "要確認";
