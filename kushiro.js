@@ -5,7 +5,7 @@
     ["本線", "#0288d1", 4], ["右折レーン", "#ff5252", 5], ["左折レーン", "#fbc02d", 5],
     ["側道", "#7cb342", 4], ["ランプ", "#7cb342", 4], ["登坂車線", "#9c27b0", 5]
   ];
-  var SEC_COLORS = ["#1565c0", "#e64a19", "#00897b", "#212121", "#6d4c41", "#c2185b", "#2e7d32", "#455a64", "#0097a7", "#ef6c00", "#1a237e", "#827717", "#ad1457", "#00695c", "#3949ab"];
+  var SEC_COLORS = ["#1565c0", "#e64a19", "#00897b", "#00b0ff", "#6d4c41", "#c2185b", "#2e7d32", "#455a64", "#0097a7", "#ef6c00", "#1a237e", "#827717", "#ad1457", "#00695c", "#3949ab"];
   var secColor = {}; D.sections.forEach(function (x, i) { secColor[x.no] = SEC_COLORS[i % SEC_COLORS.length]; });
   var endsLayer, pinsBySec = {}, banner, map, secLayers = {}, ITEMS = [], drawList = [], routeGrid = null, extraOn = true, user = null, watchId = null, follow = true, started = false;
   var on = {}; TYPES.forEach(function (t) { on[t[0]] = true; });
@@ -456,7 +456,7 @@
     root.appendChild(bar); root.appendChild(mapNote); root.appendChild(body);
     syncFollow();
     buildKp(); buildMap(box); buildPanel(side); applySel(false);
-    side.appendChild(el("p", "k-ver", "表示バージョン: r23(" + "tile" + ")"));
+    side.appendChild(el("p", "k-ver", "表示バージョン: r24(" + "tile" + ")"));
     map.on("dragstart", function () { if (follow) { follow = false; syncFollow(); } });
   };
 })();
