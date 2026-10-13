@@ -85,7 +85,6 @@
       var parts = [["右折レーン", "右折"], ["左折レーン", "左折"], ["ランプ", "ランプ"], ["登坂車線", "登坂車線"], ["側道", "側道"]].filter(function (k) { return cnt[k[0]] > 0; })
         .map(function (k) { return k[1] + "×" + cnt[k[0]] + "箇所"; });
       if (parts.length) h += "<br>" + parts.join(" ");
-      if (f.t === "本線" && sp && (sp.ok || sp.approx)) h += "<br>この付近: kp" + fmtKp(kpNearest(sp, ev.latlng)) + "(目安)";
     }
     L.popup().setLatLng(ev.latlng).setContent(h).openOn(map);
   }
@@ -196,10 +195,6 @@
       if (v) endsLayer.addTo(map); else map.removeLayer(endsLayer);
     });
     chips.appendChild(be);
-    var bk = el("button", "k-chip"); bk.type = "button"; bk.setAttribute("aria-pressed", "true");
-    var sk = el("span", "k-sw k-sw-kp", "kp"); bk.appendChild(sk); bk.appendChild(document.createTextNode("キロポスト(1km・拡大で表示)"));
-    bk.addEventListener("click", function () { kpOn = !kpOn; bk.setAttribute("aria-pressed", String(kpOn)); kpDraw(); });
-    chips.appendChild(bk);
     side.appendChild(chips);
 
     side.appendChild(el("h3", "k-h", "周辺の施設(拡大すると表示)"));
@@ -230,7 +225,7 @@
       var b = el("button", "k-sec"); b.type = "button"; b.dataset.no = s.no; b.style.setProperty("--c", secColor[s.no]);
       b.appendChild(el("b", null, s.road));
       var nol = el("span", "k-no"); var sw2 = el("span", "k-swatch"); nol.appendChild(sw2); nol.appendChild(document.createTextNode(s.no)); b.appendChild(nol);
-      var spx = SECPATH[s.no], kpn = !spx || !(spx.ok || spx.approx) ? " / kp目安なし" : spx.approx ? " / kp目安(誤差大)" : "";
+      var kpn = "";
       b.appendChild(el("span", "k-sub", mains[0].a + " ~ " + mains[0].b + (s.kind === "新道" ? "(新道)" : "") + " / 約" + km.toFixed(0) + "km" + kpn));
       b.setAttribute("aria-pressed", "false");
       b.addEventListener("click", function () { sel[s.no] = !sel[s.no]; applySel(true); });
@@ -294,7 +289,7 @@
   function poiSchedule(force) { clearTimeout(poiTimer); poiTimer = setTimeout(function () { poiLoad(force); }, 700); }
 
   /* キロポスト(目安): 本線の形状に沿って起点〜終点のキロポストを等間隔で割り当てる */
-  var SECPATH = {}, kpLayer = null, kpOn = true;
+  var SECPATH = {}, kpLayer = null, kpOn = false;
   function kmDist(a, b) { var kx = 111.32 * Math.cos(a[0] * Math.PI / 180); return Math.hypot((a[1] - b[1]) * kx, (a[0] - b[0]) * 110.54); }
   function kpNum(t) { return parseFloat(String(t).replace("kp", "")); }
   function buildKp() {
@@ -461,7 +456,7 @@
     root.appendChild(bar); root.appendChild(mapNote); root.appendChild(body);
     syncFollow();
     buildKp(); buildMap(box); buildPanel(side); applySel(false);
-    side.appendChild(el("p", "k-ver", "表示バージョン: r22(" + "tile" + ")"));
+    side.appendChild(el("p", "k-ver", "表示バージョン: r23(" + "tile" + ")"));
     map.on("dragstart", function () { if (follow) { follow = false; syncFollow(); } });
   };
 })();
