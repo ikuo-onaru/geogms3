@@ -5,6 +5,7 @@
     ["本線", "#0288d1", 4], ["右折レーン", "#ff5252", 5], ["左折レーン", "#fbc02d", 5],
     ["側道", "#7cb342", 4], ["ランプ", "#7cb342", 4], ["登坂車線", "#9c27b0", 5]
   ];
+  var OFFLEN = {"車-32":70.6,"車-33":35.2,"車-34":2.0,"車-35":114.614,"車-36":80.252,"車-37":99.966,"車-38":13.3,"車-39":62.806,"車-40":66.4,"車-41":6.913,"車-42":42.4,"車-43":10.45,"車-44":117.0,"車-45":5.0,"車-46":1.993}; // 実施計画書 表1.2 路線延長(km)
   var SEC_COLORS = ["#1565c0", "#e64a19", "#00897b", "#00b0ff", "#6d4c41", "#c2185b", "#2e7d32", "#455a64", "#0097a7", "#ef6c00", "#1a237e", "#827717", "#ad1457", "#00695c", "#3949ab"];
   var secColor = {}; D.sections.forEach(function (x, i) { secColor[x.no] = SEC_COLORS[i % SEC_COLORS.length]; });
   var endsLayer, pinsBySec = {}, banner, map, secLayers = {}, ITEMS = [], drawList = [], routeGrid = null, extraOn = true, user = null, watchId = null, follow = true, started = false;
@@ -79,7 +80,7 @@
     if (it.kind === "extra") h = "<b>" + it.name + "</b>";
     else {
       var sc = D.sections.filter(function (x) { return x.no === it.s; })[0], sp = SECPATH[it.s], f = it.f;
-      h = "<b>" + sc.road + "(" + it.s + ")</b><br>" + f.t + "<br>" + f.a + " ~ " + f.b + "<br>延長 " + f.l + " km";
+      h = "<b>" + sc.road + "(" + it.s + ")</b><br>" + f.t + "<br>" + f.a + " ~ " + f.b + "<br>" + (f.t === "本線" ? "路線延長 " + OFFLEN[it.s].toFixed(3) : "延長 " + f.l) + " km";
       var cnt = {};
       D.feats.forEach(function (x) { if (x.s === it.s) cnt[x.t] = (cnt[x.t] || 0) + 1; });
       var parts = [["右折レーン", "右折"], ["左折レーン", "左折"], ["ランプ", "ランプ"], ["登坂車線", "登坂車線"], ["側道", "側道"]].filter(function (k) { return cnt[k[0]] > 0; })
@@ -226,7 +227,7 @@
       b.appendChild(el("b", null, s.road));
       var nol = el("span", "k-no"); var sw2 = el("span", "k-swatch"); nol.appendChild(sw2); nol.appendChild(document.createTextNode(s.no)); b.appendChild(nol);
       var kpn = "";
-      b.appendChild(el("span", "k-sub", mains[0].a + " ~ " + mains[0].b + (s.kind === "新道" ? "(新道)" : "") + " / 約" + km.toFixed(0) + "km" + kpn));
+      b.appendChild(el("span", "k-sub", mains[0].a + " ~ " + mains[0].b + (s.kind === "新道" ? "(新道)" : "") + " / 路線延長 " + OFFLEN[s.no].toFixed(3) + "km"));
       b.setAttribute("aria-pressed", "false");
       b.addEventListener("click", function () { sel[s.no] = !sel[s.no]; applySel(true); });
       list.appendChild(b);
@@ -456,7 +457,7 @@
     root.appendChild(bar); root.appendChild(mapNote); root.appendChild(body);
     syncFollow();
     buildKp(); buildMap(box); buildPanel(side); applySel(false);
-    side.appendChild(el("p", "k-ver", "表示バージョン: r24(" + "tile" + ")"));
+    side.appendChild(el("p", "k-ver", "表示バージョン: r25(" + "tile" + ")"));
     map.on("dragstart", function () { if (follow) { follow = false; syncFollow(); } });
   };
 })();
