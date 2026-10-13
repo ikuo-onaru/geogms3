@@ -463,7 +463,7 @@
     root.appendChild(bar); root.appendChild(mapNote); root.appendChild(body);
     syncFollow();
     buildKp(); buildMap(box); buildPanel(side); applySel(false);
-    side.appendChild(el("p", "k-ver", "表示バージョン: r26(" + "tile" + ")"));
+    side.appendChild(el("p", "k-ver", "表示バージョン: r27(" + "tile" + ")"));
     map.on("dragstart", function () { if (follow) { follow = false; syncFollow(); } });
   };
 })();
