@@ -83,11 +83,10 @@
   }
   function lab(v) { return c1(v).replace(/\.0$/, ""); }
   function ruler(s) {
-    var wrap = el("div", "pg-ruler"), cs = cells(s), k0 = Math.ceil(s.a - 1e-9), rows = [], cur = null;
+    var wrap = el("div", "pg-ruler"), cs = cells(s), rows = [];
     cs.forEach(function (c) {
-      var idx = Math.floor((Math.floor(c.a + 1e-9) - k0 + (c.a < k0 - 1e-9 ? 0 : 0)) / 9);
-      if (c.a < k0 - 1e-9) idx = 0;
-      if (!rows[idx]) rows[idx] = []; rows[idx].push(c);
+      var idx = Math.floor((c.a + 1e-9) / 9); // 9の倍数のkpで行を区切る
+      (rows[idx] = rows[idx] || []).push(c);
     });
     rows.forEach(function (list) {
       if (!list) return;

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
-<link rel="stylesheet" href="lib/leaflet.css?v=r31">
+<link rel="stylesheet" href="lib/leaflet.css?v=r32">
 <style>
 /* Layout: 調査車両の塗装(緑のロゴ+黄色の帯)を手がかりにした、写真中心の手順書。
    上段に手順書の章タブ、その下に場所別の小タブ、本文は写真カードの一覧。 */
@@ -185,7 +185,7 @@ dialog::backdrop { background: rgba(8, 12, 10, .86); }
 .pg-ruler { margin-top: 10px; }
 .pg-rrow { display: flex; align-items: flex-end; gap: 8px; margin-top: 4px; padding-top: 16px; position: relative; }
 .pg-rline { display: flex; flex: 1; min-width: 0; justify-content: flex-start; }
-.pg-cell { position: relative; flex: 0 0 10%; min-width: 0; height: 34px; padding: 0; border: 0; border-left: 1px solid var(--fg); border-top: 1px solid var(--fg); border-bottom: 1px solid var(--fg); background: var(--surface); cursor: pointer; touch-action: manipulation; }
+.pg-cell { position: relative; flex: 0 0 11.1111%; min-width: 0; height: 34px; padding: 0; border: 0; border-left: 1px solid var(--fg); border-top: 1px solid var(--fg); border-bottom: 1px solid var(--fg); background: var(--surface); cursor: pointer; touch-action: manipulation; }
 .pg-cell:last-child { border-right: 1px solid var(--fg); }
 .pg-cell[aria-pressed="true"] { background: var(--green); }
 .pg-tick { position: absolute; top: -16px; left: -4px; font-size: 11px; color: var(--muted); line-height: 14px; white-space: nowrap; pointer-events: none; }
@@ -349,12 +349,12 @@ body.k-fs { overflow: hidden; }
   </div>
 </dialog>
 
-<script src="lib/leaflet.js?v=r31"></script>
-<script src="lib/leaflet-rotate.js?v=r31"></script>
-<script src="kushiro-data.js?v=r31"></script>
-<script src="kushiro.js?v=r31"></script>
-<script src="progress-config.js?v=r31"></script>
-<script src="progress.js?v=r31"></script>
+<script src="lib/leaflet.js?v=r32"></script>
+<script src="lib/leaflet-rotate.js?v=r32"></script>
+<script src="kushiro-data.js?v=r32"></script>
+<script src="kushiro.js?v=r32"></script>
+<script src="progress-config.js?v=r32"></script>
+<script src="progress.js?v=r32"></script>
 <script>
 (function () {
   var Q = "要確認";
