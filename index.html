@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
-<link rel="stylesheet" href="lib/leaflet.css?v=r37">
+<link rel="stylesheet" href="lib/leaflet.css?v=r38">
 <style>
 /* Layout: 調査車両の塗装(緑のロゴ+黄色の帯)を手がかりにした、写真中心の手順書。
    上段に手順書の章タブ、その下に場所別の小タブ、本文は写真カードの一覧。 */
@@ -97,6 +97,22 @@ h1 { font-size: clamp(24px, 4vw, 32px); line-height: 1.3; margin: 2px 0 12px; te
 .chapter[aria-selected="true"] { color: var(--fg); font-weight: 700; border-bottom-color: var(--green); }
 .subs { display: flex; gap: 8px; padding: 8px 0 12px; overflow-x: auto; scrollbar-width: none; }
 .subs[hidden] { display: none; }
+.sub3 { padding: 0 0 12px 12px; border-left: 3px solid var(--green); margin-left: 4px; }
+.sub3 .sub { font-size: 13px; padding: 5px 12px; }
+.g-bar { display: flex; gap: 8px; margin: 12px 0; }
+.g-bar input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: inherit; }
+.g-btn { font: inherit; font-size: 14px; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: inherit; cursor: pointer; white-space: nowrap; }
+.g-btn.pri { background: var(--green); border-color: var(--green); color: var(--on-green); font-weight: 700; }
+.g-btn.del { color: #c62828; }
+.g-item { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.g-item h3 { margin: 0; font-size: 17px; }
+.g-item h3 small { font-weight: 400; color: var(--muted); font-size: 13px; margin-left: 8px; }
+.g-item p { margin: 6px 0 0; white-space: pre-wrap; line-height: 1.7; }
+.g-act { display: flex; gap: 8px; margin-top: 10px; }
+.g-form { background: var(--surface); border: 2px solid var(--green); border-radius: 12px; padding: 12px; margin: 8px 0; display: grid; gap: 8px; }
+.g-form input, .g-form textarea { font: inherit; font-size: 16px; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: inherit; width: 100%; box-sizing: border-box; }
+.g-form textarea { min-height: 110px; }
+.g-note { color: var(--muted); font-size: 13px; margin: 6px 0; }
 .sub { flex: none; font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; white-space: nowrap; }
 .sub[aria-selected="true"] { background: var(--green); border-color: var(--green); color: var(--on-green); font-weight: 700; }
 .sub:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
@@ -206,6 +222,15 @@ dialog::backdrop { background: rgba(8, 12, 10, .86); }
 .p-list { list-style: none; counter-reset: p; margin: 0; padding: 0; display: grid; gap: 10px; }
 .p-list li { counter-increment: p; display: flex; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; font-size: 16px; line-height: 1.5; }
 .p-list li::before { content: counter(p); flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--green); color: var(--on-green); font-weight: 700; display: grid; place-items: center; }
+.p-list li.p-exp { flex-wrap: wrap; }
+.p-tog { flex: 1; display: flex; justify-content: space-between; align-items: center; gap: 8px; font: inherit; color: inherit; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; min-height: 30px; }
+.p-tog i { font-style: normal; font-size: 12px; color: var(--muted); transition: transform .15s; }
+.p-tog[aria-expanded="true"] i { transform: rotate(180deg); }
+.p-sub { list-style: none; margin: 4px 0 0; padding: 0; width: 100%; display: grid; gap: 6px; }
+.p-sub[hidden] { display: none; }
+.p-sub li { counter-increment: none; display: flex; gap: 10px; align-items: baseline; background: var(--bg); border-radius: 8px; padding: 10px 12px; font-size: 15px; line-height: 1.5; }
+.p-sub li::before { display: none; }
+.p-sub b { flex: none; color: var(--green); }
 #prog[hidden], #prep[hidden], #note[hidden], #meas[hidden], #kushiro[hidden], .places-bar[hidden], #manual[hidden] { display: none; }
 .k-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
 .k-btn { font: inherit; font-size: 14px; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
@@ -283,16 +308,18 @@ body.k-fs { overflow: hidden; }
     <p class="eyebrow">GPR MOBILE MAPPING SYSTEM 3D</p>
     <h1>GMS3業務</h1>
     <div class="chapters groups" role="tablist" aria-label="GMS3業務の分類">
-      <button class="chapter" role="tab" aria-selected="true" id="g-equip">機材</button>
-      <button class="chapter" role="tab" aria-selected="false" id="g-flow">作業の流れ</button>
+      <button class="chapter" role="tab" aria-selected="true" id="g-equip">手引き</button>
       <button class="chapter" role="tab" aria-selected="false" id="g-area">釧路エリア</button>
     </div>
-    <div class="subs" data-g="equip" hidden>
-      <button class="sub" role="tab" aria-selected="true" id="ch-names">各部の名称</button>
+    <div class="subs" data-g="equip" hidden role="tablist" aria-label="手引き">
+      <button class="sub" role="tab" aria-selected="true" id="ch-names">機器名称</button>
+      <button class="sub" role="tab" aria-selected="false" id="ch-gloss">用語</button>
+      <button class="sub" role="tab" aria-selected="false" id="ch-flow">作業の流れ</button>
     </div>
-    <div class="subs" data-g="flow" hidden role="tablist" aria-label="作業の流れ">
-      <button class="sub" role="tab" aria-selected="false" id="ch-prep">準備</button>
-      <button class="sub" role="tab" aria-selected="false" id="ch-meas">測定中</button>
+    <div class="subs sub3" id="subs3" hidden role="tablist" aria-label="作業の流れ">
+      <button class="sub" role="tab" aria-selected="false" id="ch-prep">作業開始時</button>
+      <button class="sub" role="tab" aria-selected="false" id="ch-meas">作業中</button>
+      <button class="sub" role="tab" aria-selected="false" id="ch-end">作業終了時</button>
       <button class="sub" role="tab" aria-selected="false" id="ch-note">勤務中の注意点</button>
     </div>
     <div class="subs" data-g="area" hidden role="tablist" aria-label="釧路エリア">
@@ -313,8 +340,8 @@ body.k-fs { overflow: hidden; }
   <section id="panel" role="tabpanel" aria-live="polite"></section>
   </div>
   <section id="kushiro" role="tabpanel" aria-label="釧路ルート" hidden></section>
-  <section id="meas" role="tabpanel" aria-label="測定中" hidden>
-    <h2 class="p-h">測定中</h2>
+  <section id="meas" role="tabpanel" aria-label="作業中" hidden>
+    <h2 class="p-h">作業中</h2>
     <ol class="p-list">
       <li>自分の携帯に調査地のマイマップを入れる</li>
       <li>現在地と調査地の確認をする</li>
@@ -340,18 +367,35 @@ body.k-fs { overflow: hidden; }
       <li>喫煙者は、車内ではタバコを吸わないこと。</li>
     </ol>
   </section>
+  <section id="gloss" role="tabpanel" aria-label="用語" hidden></section>
   <section id="prog" role="tabpanel" aria-label="進捗" hidden></section>
-  <section id="prep" role="tabpanel" aria-label="準備" hidden>
-    <h2 class="p-h">準備手順</h2>
+  <section id="end" role="tabpanel" aria-label="作業終了時" hidden>
+    <h2 class="p-h">作業終了時</h2>
+    <p class="g-note">手順はこれから追加します。</p>
+  </section>
+  <section id="prep" role="tabpanel" aria-label="作業開始時" hidden>
+    <h2 class="p-h">作業開始時</h2>
     <ol class="p-list">
       <li>設置準備ができる広い場所（コンビニ等）まで車で移動する</li>
       <li>鍵で機器室の扉を開ける</li>
-      <li>3Dレーダーを設置する</li>
-      <li>屋根部・機器室内の機器をケーブル接続し、電源をつける</li>
-      <li>発電機を始動する</li>
-      <li>カメラPCとレーダーPCの準備をする</li>
+      <li class="p-exp">
+        <button type="button" class="p-tog" aria-expanded="false">機器をセッティングする<i aria-hidden="true">▼</i></button>
+        <ol class="p-sub" hidden>
+          <li><b>③-1</b><span>3Dレーダーを設置する</span></li>
+          <li><b>③-2</b><span>ドップラーの設置</span></li>
+          <li><b>③-3</b><span>屋根部3DレーダーGPSとカメラGPS（ガーミン）の設置</span></li>
+          <li><b>③-4</b><span>エンドヘミ　セッティング</span></li>
+          <li><b>③-5</b><span>発電機　始動</span></li>
+          <li><b>③-6</b><span>カメラPc　電源オン</span></li>
+          <li><b>③-7</b><span>ハードディスク　中身入れて電源オン</span></li>
+          <li><b>③-8</b><span>変圧器電源オン</span></li>
+          <li><b>③-9</b><span>レーダー電源コードを接続して、電源ボタンを押す</span></li>
+          <li><b>③-10</b><span>エンコーダの電源をオンにしてキーを回す</span></li>
+        </ol>
+      </li>
       <li>KY活動をする</li>
       <li>調査地まで移動する</li>
+      <li>移動中にカメラPCとジオスコープPCのセッティングをする</li>
     </ol>
   </section>
 </main>
@@ -363,12 +407,13 @@ body.k-fs { overflow: hidden; }
   </div>
 </dialog>
 
-<script src="lib/leaflet.js?v=r37"></script>
-<script src="lib/leaflet-rotate.js?v=r37"></script>
-<script src="kushiro-data.js?v=r37"></script>
-<script src="kushiro.js?v=r37"></script>
-<script src="progress-config.js?v=r37"></script>
-<script src="progress.js?v=r37"></script>
+<script src="lib/leaflet.js?v=r38"></script>
+<script src="lib/leaflet-rotate.js?v=r38"></script>
+<script src="kushiro-data.js?v=r38"></script>
+<script src="kushiro.js?v=r38"></script>
+<script src="progress-config.js?v=r38"></script>
+<script src="progress.js?v=r38"></script>
+<script src="glossary.js?v=r38"></script>
 <script>
 (function () {
   var Q = "要確認";
@@ -627,8 +672,17 @@ body.k-fs { overflow: hidden; }
 
   var chNames = document.getElementById("ch-names");
   var manual = document.getElementById("manual"), kview = document.getElementById("kushiro");
-  var CH = { kushiro: ["ch-kushiro", "kushiro"], prep: ["ch-prep", "prep"], meas: ["ch-meas", "meas"], note: ["ch-note", "note"], prog: ["ch-prog", "prog"] };
-  var GROUPS = { equip: ["names"], flow: ["prep", "meas", "note"], area: ["kushiro", "prog"] };
+  var CH = { kushiro: ["ch-kushiro", "kushiro"], prep: ["ch-prep", "prep"], meas: ["ch-meas", "meas"], note: ["ch-note", "note"], end: ["ch-end", "end"], prog: ["ch-prog", "prog"], gloss: ["ch-gloss", "gloss"] };
+  var GROUPS = { equip: ["names", "gloss", "prep", "meas", "end", "note"], area: ["kushiro", "prog"] };
+document.querySelectorAll(".p-tog").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var o = b.getAttribute("aria-expanded") !== "true";
+      b.setAttribute("aria-expanded", o ? "true" : "false");
+      b.parentNode.querySelector(".p-sub").hidden = !o;
+    });
+  });
+  var FLOW = ["prep", "meas", "end", "note"];
+  document.getElementById("ch-flow").addEventListener("click", function () { chapter("prep", true); window.scrollTo({ top: 0 }); });
   function groupOf(name) { return Object.keys(GROUPS).filter(function (g) { return GROUPS[g].indexOf(name) >= 0; })[0] || "equip"; }
   function chapter(name, pushHash) {
     var n = !CH[name], grp = groupOf(name);
@@ -642,7 +696,11 @@ body.k-fs { overflow: hidden; }
       document.getElementById("g-" + g).setAttribute("aria-selected", g === grp ? "true" : "false");
     });
     document.querySelectorAll(".subs").forEach(function (r) { r.hidden = !(r.dataset.g === grp && GROUPS[grp].length > 1); });
+    var inFlow = FLOW.indexOf(name) >= 0;
+    document.getElementById("subs3").hidden = !inFlow;
+    document.getElementById("ch-flow").setAttribute("aria-selected", inFlow ? "true" : "false");
     if (name === "kushiro") window.initKushiro(kview);
+    if (name === "gloss") window.initGlossary(document.getElementById("gloss"));
     if (name === "prog") window.initProgress(document.getElementById("prog"));
     if (pushHash && !n) { try { history.replaceState(null, "", "#" + name); } catch (e) {} }
     else if (pushHash) { show(TABS[0].id, true); }
@@ -657,7 +715,7 @@ body.k-fs { overflow: hidden; }
 
   var start = (location.hash || "").replace("#", "");
   show(CH[start] ? "" : start, false);
-  if (CH[start]) chapter(start, false);
+  chapter(CH[start] ? start : "names", false);
 })();
 </script>
 

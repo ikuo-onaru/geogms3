@@ -179,6 +179,7 @@
     var d = doneKm(s); return d >= s.len - 0.06 ? 2 : d > 0.0005 ? 1 : 0;
   }
   window.GMS_PROGRESS = { status: statusOf, ranges: function () { var o = {}; secs.forEach(function (s) { var m = merged(s); if (m.length) o[s.no] = m.map(function (g) { return [g.a, g.b]; }); }); return o; } };
+  window.GMS_STORE = { keys: function () { return Object.keys(done); }, set: function (k, on) { if (on) done[k] = 1; else delete done[k]; save(); push(k, on); }, shared: !!url };
   function boot() { if (started) return; started = true; load(); pull(); setInterval(function () { if (!edit) pull(); }, 30000); }
   window.initProgress = function (r) { root = r; boot(); render(); };
   boot();
