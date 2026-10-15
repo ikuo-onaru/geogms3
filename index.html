@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>GMS3 手順書</title>
+<title>GMS3業務</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
-<link rel="stylesheet" href="lib/leaflet.css?v=r32">
+<link rel="stylesheet" href="lib/leaflet.css?v=r37">
 <style>
 /* Layout: 調査車両の塗装(緑のロゴ+黄色の帯)を手がかりにした、写真中心の手順書。
    上段に手順書の章タブ、その下に場所別の小タブ、本文は写真カードの一覧。 */
@@ -95,6 +95,11 @@ h1 { font-size: clamp(24px, 4vw, 32px); line-height: 1.3; margin: 2px 0 12px; te
   border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap;
 }
 .chapter[aria-selected="true"] { color: var(--fg); font-weight: 700; border-bottom-color: var(--green); }
+.subs { display: flex; gap: 8px; padding: 8px 0 12px; overflow-x: auto; scrollbar-width: none; }
+.subs[hidden] { display: none; }
+.sub { flex: none; font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; white-space: nowrap; }
+.sub[aria-selected="true"] { background: var(--green); border-color: var(--green); color: var(--on-green); font-weight: 700; }
+.sub:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
 .chapter:disabled { cursor: default; opacity: .55; }
 .chapter small { font-size: 11px; margin-left: 6px; color: var(--muted); }
 
@@ -276,14 +281,23 @@ body.k-fs { overflow: hidden; }
   <div class="livery" aria-hidden="true"></div>
   <div class="wrap">
     <p class="eyebrow">GPR MOBILE MAPPING SYSTEM 3D</p>
-    <h1>GMS3 手順書</h1>
-    <div class="chapters" role="tablist" aria-label="手順書の章">
-      <button class="chapter" role="tab" aria-selected="true" id="ch-names">各部の名称</button>
-      <button class="chapter" role="tab" aria-selected="false" id="ch-kushiro">釧路ルート</button>
-      <button class="chapter" role="tab" aria-selected="false" id="ch-prep">準備</button>
-      <button class="chapter" role="tab" aria-selected="false" id="ch-meas">測定中</button>
-      <button class="chapter" role="tab" aria-selected="false" id="ch-note">勤務中の注意点</button>
-      <button class="chapter" role="tab" aria-selected="false" id="ch-prog">進捗</button>
+    <h1>GMS3業務</h1>
+    <div class="chapters groups" role="tablist" aria-label="GMS3業務の分類">
+      <button class="chapter" role="tab" aria-selected="true" id="g-equip">機材</button>
+      <button class="chapter" role="tab" aria-selected="false" id="g-flow">作業の流れ</button>
+      <button class="chapter" role="tab" aria-selected="false" id="g-area">釧路エリア</button>
+    </div>
+    <div class="subs" data-g="equip" hidden>
+      <button class="sub" role="tab" aria-selected="true" id="ch-names">各部の名称</button>
+    </div>
+    <div class="subs" data-g="flow" hidden role="tablist" aria-label="作業の流れ">
+      <button class="sub" role="tab" aria-selected="false" id="ch-prep">準備</button>
+      <button class="sub" role="tab" aria-selected="false" id="ch-meas">測定中</button>
+      <button class="sub" role="tab" aria-selected="false" id="ch-note">勤務中の注意点</button>
+    </div>
+    <div class="subs" data-g="area" hidden role="tablist" aria-label="釧路エリア">
+      <button class="sub" role="tab" aria-selected="false" id="ch-kushiro">釧路ルート</button>
+      <button class="sub" role="tab" aria-selected="false" id="ch-prog">進捗</button>
     </div>
   </div>
 </header>
@@ -349,12 +363,12 @@ body.k-fs { overflow: hidden; }
   </div>
 </dialog>
 
-<script src="lib/leaflet.js?v=r32"></script>
-<script src="lib/leaflet-rotate.js?v=r32"></script>
-<script src="kushiro-data.js?v=r32"></script>
-<script src="kushiro.js?v=r32"></script>
-<script src="progress-config.js?v=r32"></script>
-<script src="progress.js?v=r32"></script>
+<script src="lib/leaflet.js?v=r37"></script>
+<script src="lib/leaflet-rotate.js?v=r37"></script>
+<script src="kushiro-data.js?v=r37"></script>
+<script src="kushiro.js?v=r37"></script>
+<script src="progress-config.js?v=r37"></script>
+<script src="progress.js?v=r37"></script>
 <script>
 (function () {
   var Q = "要確認";
@@ -427,11 +441,11 @@ body.k-fs { overflow: hidden; }
           ["ON/STOPスイッチ・エコノミースイッチ", "調査中は左上の2つのスイッチをON。"],
           ["出力コンセント", "調査中はコンセントを接続。"],
           ["始動ハンドル", "左のくぼみにある取っ手を引っ張りエンジンを始動。"] ] },
-        { img: "img/p43.jpg", title: "エアコン室外機と\n上部のエンコーダー(取付前)", parts: [
+        { img: "img/p43.jpg", title: "エアコン室外機と\n上部のドップラー(取付前)", parts: [
           ["エアコン室外機", "白いカバーにファンが付いた機器。車体の下にある。"],
-          ["エンコーダー取付金具", "銀色の取付金具。室外機の上部に付いている。"] ] },
-        { img: "img/p45.jpg", title: "外部エンコーダー", parts: [
-          ["外部エンコーダー", "内部のエンコーダー機器と接続する。"] ] }
+          ["ドップラー取付金具", "銀色の取付金具。室外機の上部に付いている。"] ] },
+        { img: "img/p45.jpg", title: "ドップラー", parts: [
+          ["", "内部のエンコーダー機器と接続する。"] ] }
       ] },
     { id: "cab", label: "運転室",
       lead: "ダッシュボードの上に、後方表示板を操作する16個のボタンがあります。",
@@ -482,7 +496,7 @@ body.k-fs { overflow: hidden; }
         { img: "img/p44.jpg", title: "③ エンコーダー", parts: [
           ["電源スイッチ", "右側にある小さな入り切りスイッチ。"],
           ["キースイッチ", "上面の鍵。90度回してON/OFFする。\n起動時は電源スイッチを入れ、そのあとキースイッチを回す。\n終了時は、キースイッチを回して、そのあと電源スイッチを切る。"],
-          ["エンコーダーケーブル", "外部エンコーダーと接続する。"] ] },
+          ["エンコーダーケーブル", "ドップラーと接続する。"] ] },
         { img: "img/p11.jpg", title: "④ ハードディスク", parts: [
           ["電源", "背面に電源スイッチがある。\n上下段の二か所にハードディスクを入れる。\n通常は下の段にハードディスクを差し込んで入れる。"] ] },
         { img: "img/p47.jpg", title: "④-2 ハードディスク", note: "Seagate BarraCuda の2TB。\n3.5インチ。", parts: [] },
@@ -565,9 +579,11 @@ body.k-fs { overflow: hidden; }
     var dl = el("dl", "parts");
     c.parts.forEach(function (p) {
       var row = el("div", "part");
-      var dt = el("dt", null, p[0]);
-      if (p[2]) dt.appendChild(el("span", "chip", p[2]));
-      row.appendChild(dt);
+      if (p[0]) {
+        var dt = el("dt", null, p[0]);
+        if (p[2]) dt.appendChild(el("span", "chip", p[2]));
+        row.appendChild(dt);
+      }
       row.appendChild(ddNode(p[1]));
       dl.appendChild(row);
     });
@@ -612,14 +628,20 @@ body.k-fs { overflow: hidden; }
   var chNames = document.getElementById("ch-names");
   var manual = document.getElementById("manual"), kview = document.getElementById("kushiro");
   var CH = { kushiro: ["ch-kushiro", "kushiro"], prep: ["ch-prep", "prep"], meas: ["ch-meas", "meas"], note: ["ch-note", "note"], prog: ["ch-prog", "prog"] };
+  var GROUPS = { equip: ["names"], flow: ["prep", "meas", "note"], area: ["kushiro", "prog"] };
+  function groupOf(name) { return Object.keys(GROUPS).filter(function (g) { return GROUPS[g].indexOf(name) >= 0; })[0] || "equip"; }
   function chapter(name, pushHash) {
-    var n = !CH[name];
+    var n = !CH[name], grp = groupOf(name);
     manual.hidden = !n; document.querySelector(".places-bar").hidden = !n;
     chNames.setAttribute("aria-selected", n ? "true" : "false");
     Object.keys(CH).forEach(function (k) {
       document.getElementById(CH[k][1]).hidden = k !== name;
       document.getElementById(CH[k][0]).setAttribute("aria-selected", k === name ? "true" : "false");
     });
+    Object.keys(GROUPS).forEach(function (g) {
+      document.getElementById("g-" + g).setAttribute("aria-selected", g === grp ? "true" : "false");
+    });
+    document.querySelectorAll(".subs").forEach(function (r) { r.hidden = !(r.dataset.g === grp && GROUPS[grp].length > 1); });
     if (name === "kushiro") window.initKushiro(kview);
     if (name === "prog") window.initProgress(document.getElementById("prog"));
     if (pushHash && !n) { try { history.replaceState(null, "", "#" + name); } catch (e) {} }
@@ -628,6 +650,9 @@ body.k-fs { overflow: hidden; }
   chNames.addEventListener("click", function () { chapter("names", true); window.scrollTo({ top: 0 }); });
   Object.keys(CH).forEach(function (k) {
     document.getElementById(CH[k][0]).addEventListener("click", function () { chapter(k, true); window.scrollTo({ top: 0 }); });
+  });
+  Object.keys(GROUPS).forEach(function (g) {
+    document.getElementById("g-" + g).addEventListener("click", function () { chapter(GROUPS[g][0], true); window.scrollTo({ top: 0 }); });
   });
 
   var start = (location.hash || "").replace("#", "");

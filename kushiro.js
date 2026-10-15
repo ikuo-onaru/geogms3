@@ -497,7 +497,7 @@
     syncFollow();
     buildKp(); buildMap(box); buildPanel(side); applySel(false);
     window.addEventListener("gms-progress", function () { rebuildDone(); updateStatus(); }); rebuildDone(); updateStatus();
-    side.appendChild(el("p", "k-ver", "表示バージョン: r32(" + "tile" + ")"));
+    side.appendChild(el("p", "k-ver", "表示バージョン: r37(" + "tile" + ")"));
     map.on("dragstart", function () { if (follow) { follow = false; syncFollow(); } });
   };
 })();
